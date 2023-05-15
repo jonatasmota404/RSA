@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func Get2PrimeNumbers() (uint64, uint64) {
+func Get2PrimeNumbers() (int64, int64) {
 	
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -26,13 +26,13 @@ func Get2PrimeNumbers() (uint64, uint64) {
 
 	lenRecord := len(recordNumber) + 1
 
-	primeNumber1, err := strconv.ParseUint(recordNumber[r.Intn(lenRecord)][1], 10, 64)
+	primeNumber1, err := strconv.ParseInt(recordNumber[r.Intn(lenRecord)][1], 10, 64)
 
 	if err != nil {
 		panic(err)
 	}
 
-	primeNumber2, err := strconv.ParseUint(recordNumber[r.Intn(lenRecord)][1], 10, 64)
+	primeNumber2, err := strconv.ParseInt(recordNumber[r.Intn(lenRecord)][1], 10, 64)
 	if err != nil {
 		panic(err)
 	}
@@ -41,7 +41,7 @@ func Get2PrimeNumbers() (uint64, uint64) {
 }
 
 
-func GetENumber(Z int) (int) {
+func GetENumber(Z int64) (int64) {
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -61,24 +61,69 @@ func GetENumber(Z int) (int) {
 
 	for {
 
-		E, err := strconv.ParseUint(recordNumber[r.Intn(len)][1], 10, 64)
+		E, err := strconv.ParseInt(recordNumber[r.Intn(len)][1], 10, 64)
 
 		if err != nil {
 			panic(err)
 		}
 	
 	
-		if mdc(Z, int(E)) == 1 && E > 500 && E < uint64(Z) {
-			return int(E)
+		if mdc(Z, E) == 1 && E > 500 && E < Z {
+			return E
 		}
-		
-	}
 
+	}
 }
 
-func mdc(a int, b int) int {
+func GetDNumber(E, Z int64) (int64){
+	return modInverse(E, Z)
+}
+
+func mdc(a, b int64) int64 {
     for b != 0 {
         a, b = b, a%b
     }
     return a
+}
+
+/*
+Usar algoritmos Euclidianos Estendidos que pegam dois inteiros 'a' e 'b', então encontre seu mdc, e também encontre 'x' e 'y' tal que 
+ax + by = mdc(a, b)
+
+https://www.geeksforgeeks.org/multiplicative-inverse-under-modulo-m/
+*/
+
+func modInverse(A, M int64) int64 {
+    var y int64 = 0
+    var x int64 = 1
+	m0 := M
+
+    if M == 1 {
+        return 0
+    }
+
+    for A > 1 {
+
+        // q is quotient
+        q := A / M
+
+        t := M
+
+        // m is remainder now, process
+        // same as Euclid's algo
+        M = A % M
+        A = t
+        t = y
+
+        // Update x and y
+        y = x - q*y
+        x = t
+    }
+
+    // Make x positive
+    if x < 0 {
+        x += m0
+    }
+
+    return x
 }

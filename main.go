@@ -18,9 +18,13 @@ func main() {
 	//Agora será calculado Z que é phi(N) = phi(P) * phi(Q). Ou Z = (P-1) * (Q-1)
 	Z := (P - 1) * (Q - 1)
 
-	//Agora vamos calcular o número E
+	//Agora vamos calcular o número E tal que 1 < E < Phi(N)
 
-	E := uint64(rsa.GetENumber(int(Z)))
+	E := rsa.GetENumber(Z)
 
-	fmt.Println(P, Q, N, Z, E)
+	//A chave pública é composta pelo N e o E.
+
+	D := rsa.GetDNumber(E, Z)
+
+	fmt.Println(P, Q, N, Z, E, D)
 }
