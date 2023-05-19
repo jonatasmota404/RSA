@@ -6,11 +6,16 @@ import (
 )
 
 func main() {
+	stringTeste := "olá mundo"
+	stringBytes := []byte(stringTeste)
+	fmt.Println(stringBytes)
+
+	
 	/*
-	Para gerar a sua chave pública, o servidor precisa gerar dois números P e Q.
-	Aleatórios, muito grandes e que sejam primos. 
+		Para gerar a sua chave pública, o servidor precisa gerar dois números P e Q.
+		Aleatórios, muito grandes e que sejam primos.
 	*/
-	P, Q :=  rsa.Get2PrimeNumbers()
+	P, Q := rsa.Get2PrimeNumbers()
 
 	//Agora calcularemos o N, sendo a multiplicação de P e Q.
 	N := P * Q
@@ -26,5 +31,26 @@ func main() {
 
 	D := rsa.GetDNumber(E, Z)
 
-	fmt.Println(P, Q, N, Z, E, D)
+
+	var stringCifrada []int64
+	var stringDecifrada []byte
+
+
+	for _, b := range stringBytes {
+		strInt := int64(b)
+		stringCifrada = append(stringCifrada, E**&strInt)
+	}
+
+	fmt.Println("String Cifrada")	
+
+	fmt.Println(stringCifrada)	
+
+
+	fmt.Println("String deficafrada")
+
+	for _, s := range stringCifrada {
+		stringDecifrada = append(stringDecifrada, uint8((D**&s)%N))
+	}
+
+	fmt.Println(stringDecifrada)
 }
