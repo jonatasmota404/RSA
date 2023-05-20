@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func Get2PrimeNumbers() (int64, int64) {
+func GetPrimeNumber() (int64) {
 	
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -26,18 +26,13 @@ func Get2PrimeNumbers() (int64, int64) {
 
 	lenRecord := len(recordNumber) + 1
 
-	primeNumber1, err := strconv.ParseInt(recordNumber[r.Intn(lenRecord)][1], 10, 64)
+	primeNumber, err := strconv.ParseInt(recordNumber[r.Intn(lenRecord)][1], 10, 64)
 
 	if err != nil {
 		panic(err)
 	}
 
-	primeNumber2, err := strconv.ParseInt(recordNumber[r.Intn(lenRecord)][1], 10, 64)
-	if err != nil {
-		panic(err)
-	}
-
-	return primeNumber1, primeNumber2
+	return primeNumber
 }
 
 
