@@ -7,14 +7,12 @@ import (
 
 func main() {
 	rsa := rsa.NewRsa()
-	
-	rsa.GenerateKeys()
 
-	msg := "oi"
+	msg := "Olá mundo"
 	pk := rsa.GetPublicKey()
 	msgCifrada := rsa.Cifra(msg, pk)
 	
 
-	fmt.Println("String ('oi') Cifrada: ", msgCifrada)
+	fmt.Println("String ('"+msg+"') Cifrada: ", msgCifrada)
 	fmt.Println("String decifrada", rsa.Decifra(msgCifrada))
 }

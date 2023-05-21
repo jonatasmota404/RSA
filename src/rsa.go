@@ -13,12 +13,12 @@ import (
 )
 
 type RSA struct {
-	P *big.Int
-	Q *big.Int
+	p *big.Int
+	q *big.Int
 	N *big.Int
 	Z *big.Int
 	E *big.Int
-	D *big.Int
+	d *big.Int
 }
 
 func NewRsa() *RSA {
@@ -28,25 +28,12 @@ func NewRsa() *RSA {
 		Para gerar a sua chave pública, o servidor precisa gerar dois números P e Q.
 		Aleatórios, muito grandes e que sejam primos.
 	*/
-	rsa.P = rsa.generatePrimeNumber()
-	rsa.Q = rsa.generatePrimeNumber()
-	fmt.Println("P = ",rsa.P)
-	fmt.Println("Q = ",rsa.Q)
+	if !FileExists("pk") {
+		rsa.GenerateKeys()
+		return rsa
+	}
 
-	//Agora calcularemos o N, sendo a multiplicação de P e Q.
-	rsa.N = big.NewInt(0).Mul(rsa.P, rsa.Q)
-	fmt.Println("N = ",rsa.N)
-	//Agora será calculado Z que é phi(N) = phi(P) * phi(Q). Ou Z = (P-1) * (Q-1)
-	rsa.Z = big.NewInt(0).Mul(rsa.P.Sub(rsa.P, big.NewInt(1)), rsa.Q.Sub(rsa.Q, big.NewInt(1)))
-	fmt.Println("Z = ",rsa.Z)
-
-	//Agora vamos calcular o número E tal que 1 < E < Phi(N)
-	
-	rsa.E = rsa.generateENumber()
-	fmt.Println("E = ",rsa.E)
-
-	rsa.D = rsa.generateDNumber()
-	fmt.Println("D = ",rsa.D)
+	rsa.N, rsa.E, rsa.d = rsa.getPkParameters()
 	return rsa
 }
 
@@ -72,42 +59,51 @@ func (rsa *RSA) Decifra(msg string) (string) {
 	var stringDecifrada []byte
 
 	msgDecode, _ := b64.StdEncoding.DecodeString(msg)
-	decodedD , _ := b64.StdEncoding.DecodeString(rsa.getPrivateKey())
-
-	decodedPubKey, _ := b64.StdEncoding.DecodeString(rsa.GetPublicKey())
-	decodedPubKeySplited := strings.Split(string(decodedPubKey), "|")
-	intN, _ := strconv.ParseInt(decodedPubKeySplited[0], 10, 64)
-	N := big.NewInt(intN)
-	
 	msgDecodeSplited := strings.Split(string(msgDecode), "|")
-	intD, _  := strconv.ParseInt(string(decodedD), 10, 64)
-	D := big.NewInt(intD)
 
+	
 	for _, v := range msgDecodeSplited {
 		numParsedInt, _ := strconv.ParseInt(v, 10, 64)
 		numDecifrado := big.NewInt(numParsedInt)
 		
-		stringDecifrada = append(stringDecifrada, numDecifrado.Exp(numDecifrado, D, N).Bytes()...)
+		stringDecifrada = append(stringDecifrada, numDecifrado.Exp(numDecifrado, rsa.d, rsa.N).Bytes()...)
 	}
 
 	return string(stringDecifrada)
 }
 
 func (rsa *RSA) GetPublicKey() (string) {
-	pk, err := os.ReadFile("pk")
-	if err != nil {
-		panic(err)	
-	}
-	pubKeyDecode, _ := b64.StdEncoding.DecodeString(string(pk))
-	pubKeySlice := strings.Split(string(pubKeyDecode), "|")
-	publicKey := pubKeySlice[0] + "|" + pubKeySlice[1]
+	N, E, _ := rsa.getPkParameters()
+	publicKey := N.String() + "|" + E.String()
 	return b64.StdEncoding.EncodeToString([]byte(publicKey))
 }
 
 func (rsa *RSA) GenerateKeys() {
 	f := MakeFile("pk")
 	defer CloseFile(f)
-	keysString := rsa.N.String() + "|" + rsa.E.String() + "|" + rsa.D.String()
+
+	rsa.p = rsa.generatePrimeNumber()
+	rsa.q = rsa.generatePrimeNumber()
+
+	fmt.Println("P = ",rsa.p)
+	fmt.Println("Q = ",rsa.q)
+
+	//Agora calcularemos o N, sendo a multiplicação de P e Q.
+	rsa.N = big.NewInt(0).Mul(rsa.p, rsa.q)
+	fmt.Println("N = ",rsa.N)
+	//Agora será calculado Z que é phi(N) = phi(P) * phi(Q). Ou Z = (P-1) * (Q-1)
+	rsa.Z = big.NewInt(0).Mul(rsa.p.Sub(rsa.p, big.NewInt(1)), rsa.q.Sub(rsa.q, big.NewInt(1)))
+	fmt.Println("Z = ",rsa.Z)
+
+	//Agora vamos calcular o número E tal que 1 < E < Phi(N)
+	
+	rsa.E = rsa.generateENumber()
+	fmt.Println("E = ",rsa.E)
+
+	rsa.d = rsa.generateDNumber()
+	fmt.Println("D = ",rsa.d)
+
+	keysString := rsa.N.String() + "|" + rsa.E.String() + "|" + rsa.d.String()
 	f.WriteString(b64.StdEncoding.EncodeToString([]byte(keysString)))
 }
 
@@ -152,18 +148,6 @@ func (rsa *RSA) generateENumber() (*big.Int) {
 	}
 }
 
-func (rsa *RSA) getPrivateKey() (string) {
-	pk, err := os.ReadFile("pk")
-	if err != nil {
-		panic(err)	
-	}
-
-	priKeyDecode, _ := b64.StdEncoding.DecodeString(string(pk))
-	priKeySlice := strings.Split(string(priKeyDecode), "|")
-	privateKey := priKeySlice[2]
-	return b64.StdEncoding.EncodeToString([]byte(privateKey))
-}
-
 func (rsa *RSA) generateDNumber() (*big.Int){
 	/*
 	Usar algoritmos Euclidianos Estendidos que pegam dois inteiros 'a' e 'b', então encontre seu mdc, e também encontre 'x' e 'y' tal que 
@@ -173,4 +157,18 @@ func (rsa *RSA) generateDNumber() (*big.Int){
 	*/
 	D := big.NewInt(0)
 	return D.ModInverse(rsa.E, rsa.Z)
+}
+
+func (rsa *RSA) getPkParameters() (*big.Int,*big.Int,*big.Int) {
+	pk, err := os.ReadFile("pk")
+	if err != nil {
+		panic(err)	
+	}
+	pubKeyDecode, _ := b64.StdEncoding.DecodeString(string(pk))
+	pubKeySlice := strings.Split(string(pubKeyDecode), "|")
+	N, _ := strconv.ParseInt(pubKeySlice[0], 10, 64)
+	E, _ := strconv.ParseInt(pubKeySlice[1], 10, 64)
+	D, _ := strconv.ParseInt(pubKeySlice[2], 10, 64)
+
+	return big.NewInt(N), big.NewInt(E), big.NewInt(D)
 }

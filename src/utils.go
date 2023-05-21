@@ -25,3 +25,13 @@ func AreCoprime(a, b *big.Int) bool {
 	gcd := new(big.Int).GCD(nil, nil, a, b)
 	return gcd.Cmp(big.NewInt(1)) == 0
 }
+
+func FileExists(filename string) (bool) {
+	if _, err := os.Stat(filename); err == nil {
+		return true
+	} else if os.IsNotExist(err) {
+		return false
+	} else {
+		panic("Erro ao verificar a existência do arquivo")
+	}
+}
