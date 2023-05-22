@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
-	"jrsa/src"
+	"jrsa/src/rsa"
+	"jrsa/src/chat"
+
 )
 
 func main() {
@@ -15,4 +17,5 @@ func main() {
 
 	fmt.Println("String ('"+msg+"') Cifrada: ", msgCifrada)
 	fmt.Println("String decifrada", rsa.Decifra(msgCifrada))
+	chat.Serve()
 }

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+</head>
+<body>
+    <h1>Chat</h1>
+    
+    <section>
+        <form action="/chat" method="post">
+            <input type="text" id="destiny" name="destinatario" placeholder="destinatario">
+            <input type="text" id="input" name="msg" placeholder="...">
+            <button type="submit">Enviar</button>
+        </form>
+        <div id="output"></div>
+    </section>
+    <script>
+        const submit = document.addEventListener('submit', (e) => {
+            e.preventDefault();
+            let input = document.getElementById("input");
+            let output = document.getElementById("output");
+            let socket = new WebSocket("ws://127.0.0.1:8080/chat");
+        
+            socket.onopen = function () {
+                output.innerHTML += "Status: Connected\n";
+                socket.send(input.value);
+                input.value = "";
+            };
+        
+            socket.onmessage = function (event) {
+                output.innerHTML += "\nServer: " + event.data + "\n";
+            };
+    
+        });
+        
+      </script>
+</body>
+</html>

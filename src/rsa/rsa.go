@@ -11,7 +11,8 @@ import (
 	"strings"
 	"time"
 )
-
+//Estrutura para criação de um objeto rsa.
+//(Obs em golang as letras minúsculas são atributos privados, já as maiúsculas são publicos)
 type RSA struct {
 	p *big.Int
 	q *big.Int
@@ -21,22 +22,24 @@ type RSA struct {
 	d *big.Int
 }
 
+//Método construtor do objeto rsa
 func NewRsa() *RSA {
 	rsa := new(RSA)
 
-	/*
-		Para gerar a sua chave pública, o servidor precisa gerar dois números P e Q.
-		Aleatórios, muito grandes e que sejam primos.
-	*/
+	//verifica se as chaves já foram geradas
 	if !FileExists("pk") {
+		//gera as chaves e retorna o obj rsa
 		rsa.GenerateKeys()
 		return rsa
 	}
 
+	//atribui os parâmetros da chave pública e privada as suas respectivas variáveis
 	rsa.N, rsa.E, rsa.d = rsa.getPkParameters()
 	return rsa
 }
 
+//cifra a mensagem de acordo com a chave pública
+//obs : a cifra tem que ser de acordo com a chave pública compartilhada pelo destinatário
 func (rsa *RSA) Cifra(msg string, pk string) (string) {
 	var stringCifradaSlice []string
 	msgByte := []byte(msg)
@@ -55,6 +58,7 @@ func (rsa *RSA) Cifra(msg string, pk string) (string) {
 	return b64.StdEncoding.EncodeToString([]byte(stringCifrada))
 }
 
+//decifra a mensagem de acordo com nossa chave privada
 func (rsa *RSA) Decifra(msg string) (string) {
 	var stringDecifrada []byte
 
@@ -72,12 +76,14 @@ func (rsa *RSA) Decifra(msg string) (string) {
 	return string(stringDecifrada)
 }
 
+//fornece nossa chave pública
 func (rsa *RSA) GetPublicKey() (string) {
 	N, E, _ := rsa.getPkParameters()
 	publicKey := N.String() + "|" + E.String()
 	return b64.StdEncoding.EncodeToString([]byte(publicKey))
 }
 
+//gera as chaves
 func (rsa *RSA) GenerateKeys() {
 	f := MakeFile("pk")
 	defer CloseFile(f)
@@ -107,6 +113,7 @@ func (rsa *RSA) GenerateKeys() {
 	f.WriteString(b64.StdEncoding.EncodeToString([]byte(keysString)))
 }
 
+//gera um número primo aleatório
 func (rsa *RSA) generatePrimeNumber() (*big.Int) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -133,6 +140,7 @@ func (rsa *RSA) generatePrimeNumber() (*big.Int) {
 	return big.NewInt(primeNumber)
 }
 
+//gera a variável E
 func (rsa *RSA) generateENumber() (*big.Int) {
 	
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -148,6 +156,7 @@ func (rsa *RSA) generateENumber() (*big.Int) {
 	}
 }
 
+//gera a variável D
 func (rsa *RSA) generateDNumber() (*big.Int){
 	/*
 	Usar algoritmos Euclidianos Estendidos que pegam dois inteiros 'a' e 'b', então encontre seu mdc, e também encontre 'x' e 'y' tal que 
@@ -159,6 +168,7 @@ func (rsa *RSA) generateDNumber() (*big.Int){
 	return D.ModInverse(rsa.E, rsa.Z)
 }
 
+//fornece os parâmetros da chave
 func (rsa *RSA) getPkParameters() (*big.Int,*big.Int,*big.Int) {
 	pk, err := os.ReadFile("pk")
 	if err != nil {
