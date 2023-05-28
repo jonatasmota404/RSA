@@ -18,24 +18,104 @@
         <div id="output"></div>
     </section>
     <script>
-        const submit = document.addEventListener('submit', (e) => {
+        const submit = document.addEventListener('submit', async (e) => {
             e.preventDefault();
+            let contacts = [];
+           
             let input = document.getElementById("input");
             let output = document.getElementById("output");
-            let socket = new WebSocket("ws://127.0.0.1:8080/chat");
-        
-            socket.onopen = function () {
-                output.innerHTML += "Status: Connected\n";
-                socket.send(input.value);
-                input.value = "";
+            let destiny = document.getElementById("destiny");
+
+            if(contacts.length === 0){
+                let contact = await getPk(destiny.value)
+                contacts.push(contact);
+            } else if (!contacts.find(isIp)) {
+                let contact = await getPk(destiny.value)
+                contacts.push(contact);
+            }
+
+            
+            let pk = contacts.find(isIp)
+            let msgEncoded = await getMsgEncoded('127.0.0.1', input.value, pk.pk);
+            let socket = new WebSocket(`ws://${destiny.value}:8080/chat`);
+
+            socket.onopen = async () => {
+                output.innerHTML += input.value + "<br>";
+                input.innerHTML = "";
+                socket.send(msgEncoded.msg);
+            }
+
+            socket.onmessage =  async (event) => {
+                let msgDecoded = await getMsgDecoded('127.0.0.1', event.data);
+                output.innerHTML += "<br>Server: " + msgDecoded.msg + "<br>";
             };
-        
-            socket.onmessage = function (event) {
-                output.innerHTML += "\nServer: " + event.data + "\n";
-            };
-    
+
         });
-        
-      </script>
+
+        async function fetchData(ip, endpoint) {
+            url = `http://${ip}:8080${endpoint}`
+            try {
+            const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Erro ao executar a requisição. Código do status: ' + response.status);
+                }
+                const data = await response.json();
+                return JSON.stringify(data);
+            } catch (error) {
+                console.error('Erro: ', error);
+            }
+        }
+
+        async function getPk(ip) {
+            let contact = await fetchData(ip, "/chat/pk");
+            contact =  JSON.parse(contact);
+            contact.ip = ip;
+            return contact;
+        }
+
+        async function getMsgEncoded(ip, msg,pk) {
+            
+            let url = `http://${ip}:8080/chat/cifra`
+            try {
+                const response = await fetch(url, {
+                method: "POST", // or 'PUT'
+                headers: {
+                    "Content-Type": "text/plain",
+                },
+                body: window.btoa(unescape(encodeURIComponent(`${msg}|${pk}`))),
+                });
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error("Error:", error);
+            }
+            
+        }
+
+        async function getMsgDecoded(ip, msg) {
+            
+            let url = `http://${ip}:8080/chat/decifra`
+            try {
+                const response = await fetch(url, {
+                method: "POST", // or 'PUT'
+                headers: {
+                    "Content-Type": "text/plain",
+                },
+                body: `${msg}`,
+                });
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error("Error:", error);
+            }
+            
+        }
+
+        function isIp(ip) {
+            return ip.ip === document.getElementById("destiny").value
+        }
+
+
+    </script>
 </body>
 </html>
